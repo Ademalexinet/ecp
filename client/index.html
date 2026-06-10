@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECP Manager</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Segoe UI, Arial, sans-serif; background: #f0f2f5; }
+#screen-login { min-height:100vh; display:flex; align-items:center; justify-content:center; }
+.login-box { background:#fff; border-radius:12px; padding:40px;
+  box-shadow:0 4px 24px rgba(0,0,0,.12); width:100%; max-width:380px; }
+.login-box h1 { font-size:22px; color:#1a3a6b; margin-bottom:6px; }
+.login-box p { font-size:13px; color:#888; margin-bottom:24px; }
+.field { margin-bottom:16px; }
+.field label { display:block; font-size:13px; font-weight:500; margin-bottom:5px; }
+.field input { width:100%; padding:10px 12px; border:1px solid #ddd;
+  border-radius:6px; font-size:14px; }
+.field input:focus { outline:none; border-color:#1a3a6b; }
+#login-err { color:#c62828; font-size:13px; margin-bottom:12px; display:none; }
+#screen-app { display:none; }
+header { background:#1a3a6b; color:#fff; padding:12px 24px;
+  display:flex; align-items:center; gap:12px; }
+header h1 { font-size:17px; font-weight:600; flex:1; }
+#dot { width:10px; height:10px; border-radius:50%; background:#aaa; }
+#dot.ok { background:#4caf50; }
+#dot.err { background:#f44336; }
+#dot.wait { background:#ff9800; animation:blink 1s infinite; }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:.3} }
+#stxt { font-size:13px; opacity:.85; }
+#uinfo { font-size:13px; opacity:.7; margin-left:auto; }
+.wrap { max-width:1000px; margin:24px auto; padding:0 16px; }
+#banner { background:#fff; border:2px solid #ff9800; border-radius:10px;
+  padding:24px; margin-bottom:20px; display:none; }
+#banner.v { display:block; }
+#banner h2 { font-size:15px; color:#e65100; margin-bottom:10px; }
+#banner p { font-size:13px; color:#555; margin-bottom:16px; line-height:1.7; }
+.steps { list-style:none; counter-reset:s; margin-bottom:18px; }
+.steps li { counter-increment:s; display:flex; gap:10px;
+  font-size:13px; margin-bottom:10px; }
+.steps li::before { content:counter(s); background:#1a3a6b; color:#fff;
+  border-radius:50%; min-width:22px; height:22px; display:flex;
+  align-items:center; justify-content:center; font-size:12px; font-weight:700; }
+.bact { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+.bdl { display:inline-flex; align-items:center; gap:8px; padding:10px 20px;
+  background:#1a3a6b; color:#fff; border-radius:6px; text-decoration:none;
+  font-size:14px; font-weight:600; }
+.brt { padding:10px 18px; border:2px solid #1a3a6b; background:transparent;
+  color:#1a3a6b; border-radius:6px; font-size:14px; font-weight:600; cursor:pointer; }
+.card { background:#fff; border-radius:8px;
+  box-shadow:0 1px 4px rgba(0,0,0,.1); margin-bottom:16px; }
+.ch { padding:13px 18px; border-bottom:1px solid #eee;
+  display:flex; align-items:center; gap:10px; }
+.ch h2 { font-size:15px; font-weight:600; flex:1; }
+.cb { padding:16px 18px; }
+button { cursor:pointer; border:none; border-radius:5px; font-size:13px;
+  font-weight:500; transition:opacity .15s; padding:7px 16px; }
+button:disabled { opacity:.4; cursor:not-allowed; }
+button:not(:disabled):hover { opacity:.85; }
+.bp { background:#1a3a6b; color:#fff; }
+.bg { background:#388e3c; color:#fff; }
+.bn { background:#eee; color:#333; }
+.bs { padding:5px 11px; font-size:12px; }
+input[type=text],input[type=password],input[type=email] {
+  width:100%; padding:8px 10px; border:1px solid #ccc;
+  border-radius:5px; font-size:14px; }
+input:focus { outline:none; border-color:#1a3a6b; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th { background:#f5f6fa; text-align:left; padding:9px 12px;
+  border-bottom:2px solid #e0e0e0; font-weight:600;
+  cursor:pointer; user-select:none; }
+th:hover { background:#eaebf0; }
+td { padding:9px 12px; border-bottom:1px solid #f0f0f0; vertical-align:middle; }
+tr:hover td { background:#f9fbff; }
+tr.sel td { background:#e8f0fe; }
+.badge { display:inline-block; padding:2px 8px; border-radius:12px;
+  font-size:11px; font-weight:600; }
+.bg2 { background:#e8f5e9; color:#2e7d32; }
+.br { background:#ffebee; color:#c62828; }
+.by { background:#fff8e1; color:#e65100; }
+#msg { margin-top:12px; padding:10px 14px; border-radius:6px;
+  font-size:13px; display:none; }
+#msg.ok  { background:#e8f5e9; color:#2e7d32; display:block; }
+#msg.err { background:#ffebee; color:#c62828; display:block; }
+#msg.inf { background:#e3f2fd; color:#1565c0; display:block; }
+.bl { background:#1a3a6b; color:#fff; padding:5px 12px;
+  border-radius:4px; cursor:pointer; font-size:12px; border:none; }
+.bl:hover { opacity:.85; }
+</style>
+</head>
+<body>
+
+<div id="screen-login">
+  <div class="login-box">
+    <h1>ECP Manager</h1>
+    <p>Войдите чтобы продолжить</p>
+    <div id="login-err"></div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="em" placeholder="user@company.ru" />
+    </div>
+    <div class="field">
+      <label>Пароль</label>
+      <input type="password" id="pw" placeholder="••••••••" />
+    </div>
+    <button class="bp" id="btn-login" style="width:100%;padding:11px"
+      onclick="doLogin()">Войти</button>
+  </div>
+</div>
+
+<div id="screen-app">
+  <header>
+    <div id="dot" class="wait"></div>
+    <h1>ECP Manager</h1>
+    <span id="stxt">Подключение...</span>
+    <span id="uinfo"></span>
+    <button class="bl" onclick="doLogout()">Выйти</button>
+  </header>
+  <div class="wrap">
+
+    <div id="banner">
+      <h2>⚠ Агент не запущен на этом компьютере</h2>
+      <p>Для работы необходим локальный агент. Устанавливается один раз.</p>
+      <ol class="steps">
+        <li><span>Скачайте агент (кнопка ниже)</span></li>
+        <li><span>Запустите <strong>ecp-agent.exe</strong></span></li>
+        <li><span>Нажмите <strong>«Проверить снова»</strong></span></li>
+      </ol>
+      <div class="bact">
+        <a class="bdl" id="btn-dl" href="/downloads/ecp-agent.exe">⬇ Скачать агент</a>
+        <button class="brt" onclick="retry()">🔄 Проверить снова</button>
+      </div>
+      <p style="margin-top:12px;font-size:12px;color:#aaa">
+        Агент работает только локально и не передаёт данные в интернет.
+      </p>
+    </div>
+
+    <div class="card" id="card-list" style="display:none">
+      <div class="ch">
+        <h2>Контейнеры ЭЦП</h2>
+        <button class="bp bs" onclick="load()">🔄 Обновить</button>
+      </div>
+      <div class="cb">
+        <table>
+          <thead><tr>
+            <th onclick="srt(0)">Наименование</th>
+            <th onclick="srt(1)">Действует до</th>
+            <th onclick="srt(2)">Считыватель</th>
+            <th onclick="srt(3)">Выдан</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div id="nd" style="text-align:center;padding:28px;color:#888;display:none">
+          Контейнеры не найдены
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="card-copy" style="display:none">
+      <div class="ch"><h2>Копирование контейнера</h2></div>
+      <div class="cb">
+        <div style="margin-bottom:10px;font-size:13px;color:#555">
+          Источник: <strong id="src"></strong>
+        </div>
+        <label style="font-size:13px;font-weight:500;display:block;margin-bottom:6px">
+          Имя нового контейнера:
+        </label>
+        <input type="text" id="dst" />
+        <div style="margin-top:12px;display:flex;gap:10px">
+          <button class="bg" id="btn-ok" onclick="doCopy()">✓ ОК — Копировать</button>
+          <button class="bn" onclick="cancelCopy()">Отмена</button>
+        </div>
+        <div id="msg"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let TOKEN=null, ws=null, containers=[], selected=null;
+let sc=-1, sa=true, retries=0;
+
+async function doLogin() {
+  const email=document.getElementById("em").value.trim();
+  const pass=document.getElementById("pw").value;
+  const err=document.getElementById("login-err");
+  const btn=document.getElementById("btn-login");
+  err.style.display="none"; btn.disabled=true; btn.textContent="Вход...";
+  try {
+    const r=await fetch("/api/login",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email,password:pass})});
+    const d=await r.json();
+    if (!r.ok) throw new Error(d.error||"Ошибка входа");
+    TOKEN=d.token;
+    document.getElementById("uinfo").textContent=d.name;
+    document.getElementById("screen-login").style.display="none";
+    document.getElementById("screen-app").style.display="block";
+    connect();
+  } catch(e) {
+    err.textContent=e.message; err.style.display="block";
+  } finally { btn.disabled=false; btn.textContent="Войти"; }
+}
+
+function doLogout() {
+  TOKEN=null; if(ws) ws.close();
+  document.getElementById("screen-app").style.display="none";
+  document.getElementById("screen-login").style.display="flex";
+  document.getElementById("card-list").style.display="none";
+  document.getElementById("card-copy").style.display="none";
+  hideBanner();
+}
+
+function connect() {
+  if (!TOKEN) return;
+  setSt("wait","Подключение...");
+  const proto=location.protocol==="https:"?"wss":"ws";
+  ws=new WebSocket(`${proto}://${location.host}?token=${TOKEN}`);
+  ws.onopen=()=>{ retries=0; setSt("ok","Подключено ✓"); hideBanner();
+    document.getElementById("card-list").style.display=""; load(); };
+  ws.onclose=()=>{ retries++;
+    if(retries<=3){ setSt("wait",`Переподключение...`); setTimeout(connect,2000); }
+    else { setSt("err","Нет связи"); } };
+  ws.onerror=()=>{};
+  ws.onmessage=e=>{
+    const m=JSON.parse(e.data);
+    if(m.error==="Не авторизован"){ doLogout(); return; }
+    if(m.action==="agent_error"||m.action==="agent_disconnected") showBanner();
+    if(m.action==="list_containers") render(m.containers);
+    if(m.action==="copy_container") onResult(m);
+    if(m.action==="check_name") document.getElementById("dst").value=m.name;
+  };
+}
+
+function send(o){ if(ws&&ws.readyState===1) ws.send(JSON.stringify(o)); }
+function retry(){ retries=0; hideBanner(); connect(); }
+function showBanner(){ document.getElementById("banner").classList.add("v");
+  document.getElementById("card-list").style.display="none";
+  document.getElementById("card-copy").style.display="none"; }
+function hideBanner(){ document.getElementById("banner").classList.remove("v"); }
+function setSt(c,t){ document.getElementById("dot").className=c;
+  document.getElementById("stxt").textContent=t; }
+function load(){
+  document.getElementById("tbody").innerHTML=
+    "<tr><td colspan='5' style='text-align:center;padding:20px;color:#888'>Загрузка...</td></tr>";
+  send({action:"list_containers"});
+}
+function render(data){ containers=data; build(); }
+function build(){
+  const keys=["name","valid_to","reader","issuer"];
+  let rows=[...containers];
+  if(sc>=0) rows.sort((a,b)=>{
+    const v=(a[keys[sc]]||"").localeCompare(b[keys[sc]]||"","ru");
+    return sa?v:-v; });
+  const nd=document.getElementById("nd");
+  if(!rows.length){ document.getElementById("tbody").innerHTML="";
+    nd.style.display="block"; return; }
+  nd.style.display="none";
+  const today=new Date();
+  document.getElementById("tbody").innerHTML=rows.map((c,i)=>{
+    const vd=pd(c.valid_to);
+    let b='<span class="badge bg2">Действует</span>';
+    if(vd&&vd<today) b='<span class="badge br">Истёк</span>';
+    else if(vd&&(vd-today)<30*86400000) b='<span class="badge by">Скоро</span>';
+    const s=selected&&selected.container===c.container?"sel":"";
+    return `<tr class="${s}" onclick="sel(${i})">
+      <td>${e(c.name)}</td><td>${e(c.valid_to)} ${b}</td>
+      <td>${e(c.reader)}</td><td>${e(c.issuer)}</td>
+      <td><button class="bp bs"
+        onclick="event.stopPropagation();openCopy(${i})">Копировать</button></td>
+    </tr>`;
+  }).join("");
+}
+function srt(c){ sa=sc===c?!sa:true; sc=c; build(); }
+function sel(i){ selected=containers[i]; build(); }
+function openCopy(i){
+  selected=containers[i]; build();
+  document.getElementById("card-copy").style.display="";
+  document.getElementById("src").textContent=selected.name;
+  clearMsg();
+  const def=selected.name+" до "+(selected.valid_to||"");
+  document.getElementById("dst").value=def;
+  send({action:"check_name",name:def});
+  document.getElementById("dst").focus();
+  document.getElementById("card-copy").scrollIntoView({behavior:"smooth"});
+}
+function cancelCopy(){ document.getElementById("card-copy").style.display="none"; clearMsg(); }
+function doCopy(){
+  const dst=document.getElementById("dst").value.trim();
+  if(!dst){ showMsg("Введите имя","err"); return; }
+  document.getElementById("btn-ok").disabled=true;
+  showMsg("Копирование... подождите","inf");
+  send({action:"copy_container",src_container:selected.container,dst_name:dst});
+}
+function onResult(m){
+  document.getElementById("btn-ok").disabled=false;
+  showMsg(m.success?"✓ "+m.message:"✗ "+m.message,m.success?"ok":"err");
+  if(m.success) load();
+}
+function showMsg(t,c){ const el=document.getElementById("msg"); el.textContent=t; el.className=c; }
+function clearMsg(){ const el=document.getElementById("msg"); el.className=""; el.textContent=""; }
+function pd(s){ if(!s)return null;
+  const m=s.match(/(\d{2})[\.\-\/](\d{2})[\.\-\/](\d{4})/);
+  return m?new Date(+m[3],+m[2]-1,+m[1]):new Date(s); }
+function e(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+
+document.getElementById("pw").addEventListener("keydown",ev=>{ if(ev.key==="Enter") doLogin(); });
+document.addEventListener("DOMContentLoaded",()=>{
+  document.getElementById("dst").addEventListener("keydown",ev=>{ if(ev.key==="Enter") doCopy(); });
+});
+</script>
+</body>
+</html>

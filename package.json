@@ -1,0 +1,29 @@
+{
+  "name": "ecp-manager",
+  "version": "1.0.0",
+  "description": "Менеджер контейнеров ЭЦП (КриптоПро)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --x64"
+  },
+  "build": {
+    "appId": "ru.ecpmanager.app",
+    "productName": "Менеджер ЭЦП",
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerLanguages": ["ru_RU"],
+      "language": "1049"
+    },
+    "files": ["main.js","preload.js","index.html","src/**/*"]
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  }
+}
